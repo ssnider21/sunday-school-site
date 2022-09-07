@@ -1,11 +1,21 @@
 from sleeper_wrapper import League, Stats
 import json
 
+import pandas as pd
+import random
+
+
 league = League("854402777273720832")
 stats = Stats()
 with open("sunday_school/players.json") as f:
     PLAYERS = json.load(f)
 
+injuries = {
+    "QB": [.025, 3],
+    "RB": [.052, 4],
+    "WR": [.045, 3],
+    "TE": [.049, 3],
+}
 
 class Team:
     def __init__(self, owner_id):
@@ -41,6 +51,9 @@ class SundaySchool:
     def get_player_name(self, player_id):
         return f"{PLAYERS.get(player_id).get('first_name')} {PLAYERS.get(player_id).get('last_name')}"
 
+    def get_player_position(self, player_id):
+        return PLAYERS.get(player_id).get("position")
+
     def _get_team_nicknames(self):
         nickname_dict = {}
         for user in self.users:
@@ -55,13 +68,25 @@ class SundaySchool:
         combined_total = {}
         projections = stats.get_all_projections(season_type="regular", season=2022)
         for roster in self.rosters:
+            # print(roster)
             owner_id = roster.get("owner_id")
             team_name = self.nicknames.get(owner_id)
             combined_total[team_name] = 0
-            all_players = roster.get("players")
+            all_players = roster.get("starters")
             for player in all_players:
-                combined_total[team_name] += projections.get(player).get("pts_ppr")
-        return combined_total
+                proj = projections.get(player).get("pts_ppr")
+                pos = self.get_player_position(player)
+                for i in range(18):
+                    if injuries.get(pos) is not None and random.random() < injuries.get(pos)[0]:
+                        i += injuries.get(pos)[1]
+                        proj -= ((proj/17)*injuries.get(pos)[1])
+                combined_total[team_name] += proj
+
+        df = pd.DataFrame.from_dict(combined_total, orient='index', columns=["Season Starters Total"])
+        df["Rank"] = df["Season Starters Total"].rank(ascending=False)
+        df_styled =  df.style.format(lambda x: f'{x:,.1f}' if isinstance(x, float) else f'{x}').set_table_attributes('class="table"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).background_gradient(cmap='RdYlGn', subset=["Season Starters Total"]).to_html()
+
+        return df_styled
 
     def get_roster_season_projections_breakdown(self):
         breakdown_by_player = {}

@@ -3,20 +3,9 @@
 {% block content %}
     <h1>{% block title %} Sunday School Stats {% endblock %}</h1>
     <h3>Season Total Projections</h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th scope="col">Team</th>
-                <th scope="col">Season Total</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for k,v in league.get_roster_season_projections().items() %}
-            <tr><td>{{ k }}</td>
-            <td>{{ v }}</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        {{ league|safe }}
+    </div>
     <br>
     <h3>2021 Results</h3>
     <div class="table-responsive">

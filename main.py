@@ -6,7 +6,6 @@ from leeger.model.league import League, Year
 # SingleScoreYearCalculator, ScoringShareYearCalculator, ScoringStandardDeviationYearCalculator, AWALYearCalculator, PlusMinusYearCalculator
 from leeger.model.stat.YearStatSheet import YearStatSheet
 from leeger.util.stat_sheet import yearStatSheet
-from pprint import pprint as pp
 from sleeper.api import LeagueAPIClient
 from sleeper.enum import Sport
 from sleeper.model import League, Roster, User, Matchup, PlayoffMatchup, Transaction, TradedPick, SportState, LeagueSettings
@@ -16,6 +15,8 @@ from decimal import *
 from pprint import pprint as pp
 
 app = Flask(__name__)
+
+# pd.options.display.float_format = '{:.2f}'.format
 
 sleeperLeagueLoader = SleeperLeagueLoader("854402777273720832", [2021])
 league = sleeperLeagueLoader.loadLeague()
@@ -30,10 +31,11 @@ for team in x.teams:
 def nicknames(d):
     nd = {}
     for x in d:
-        if isinstance(d[x], Decimal):
-            nd[team_map.get(x)] = d[x].quantize(Decimal('.01'), rounding=ROUND_UP)
+        if isinstance(d[x], Decimal) or isinstance(d[x], float):
+            # nd[team_map.get(x)] = d[x].quantize(Decimal('.01'), rounding=ROUND_UP)
+            nd[team_map.get(x)] = float(d[x])
         else:
-            nd[team_map.get(x)] = d[x]
+            nd[team_map.get(x)] = int(d[x])
     return nd
 
 yearstats = yearStatSheet(x, onlyRegularSeason=True).__dict__
@@ -42,12 +44,12 @@ for stat, d in yearstats.items():
     ys_with_nn[stat] = nicknames(d)
 
 df = pd.DataFrame(ys_with_nn, columns=yearstats.keys())
-html = df.apply(pd.to_numeric).style.set_table_attributes('class="table"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).background_gradient(cmap='RdYlGn').to_html()
+html = df.style.format(lambda x: f'{x:,.3f}' if isinstance(x, float) else f'{x}').set_table_attributes('class="table"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).background_gradient(cmap='RdYlGn').to_html()
 
 tables = []
 for stat, d in ys_with_nn.items():
     df = pd.DataFrame.from_dict(d, orient='index', columns=[stat])
-    styled = df.apply(pd.to_numeric).style.set_table_attributes('class="table"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).background_gradient(cmap='RdYlGn').to_html()
+    styled = df.style.format(lambda x: f'{x:,.3f}' if isinstance(x, float) else f'{x}').set_table_attributes('class="table"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).background_gradient(cmap='RdYlGn').to_html()
     tables.append(styled)
 
 pr = {}
@@ -65,12 +67,14 @@ pwr["pointsScored_rank"] = pwr["pointsScored"].rank(ascending=False)
 pwr["scoringStandardDeviation_rank"] = pwr["scoringStandardDeviation"].rank()
 pwr["overallWins_rank"] = pwr["overallWins"].rank(ascending=False)
 pwr["Power Rank"] = pwr.apply(lambda row: ((3*row.wal_rank) + row.awal_rank + row.smartWins_rank + row.pointsScored_rank + row.scoringStandardDeviation_rank + row.overallWins_rank)/8, axis=1)
-pwr_styled =  pwr.apply(pd.to_numeric).style.set_table_attributes('class="table"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).hide_columns(["wal_rank", "awal_rank", "smartWins_rank", "pointsScored_rank", "scoringStandardDeviation_rank", "overallWins_rank"]).background_gradient(cmap='RdYlGn').to_html()
+pwr_styled =  pwr.style.format(lambda x: f'{x:,.3f}' if isinstance(x, float) else f'{x}').set_table_attributes('class="table"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).hide_columns(["wal_rank", "awal_rank", "smartWins_rank", "pointsScored_rank", "scoringStandardDeviation_rank", "overallWins_rank"]).background_gradient(cmap='RdYlGn').to_html()
 
 
 @app.route('/')
 def index():
-    return render_template("index.html", league=SundaySchool(), tables=tables, full_table=html, power=pwr_styled)
+    l = SundaySchool()
+    h = l.get_roster_season_projections()
+    return render_template("index.html", league=h, tables=tables, full_table=html, power=pwr_styled)
 
 @app.route('/team_breakdowns')
 def team_breakdowns():
