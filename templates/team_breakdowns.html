@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} Sunday School Stats {% endblock %}</h1>
+    <h3>Team Breakdowns</h3>
+    {% for k,v in league.get_roster_season_projections_breakdown().items() %}
+    <h5>{{ k }}</h5>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Player</th>
+                <th scope="col">Season Total</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for player,pts in v.items() %}
+            <tr><td>{{ player }}</td>
+            <td>{{ pts }}</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endfor %}
+{% endblock %}
