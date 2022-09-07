@@ -57,7 +57,6 @@ for stat, d in ys_with_nn.items():
     if stat in set(["wal", "awal", "smartWins", "pointsScored", "scoringStandardDeviation", "overallWins"]):
         for team in d:
             pr[team][stat] = d.get(team)
-pp(pr)
 pwr = pd.DataFrame.from_dict(pr, orient='index')
 pwr["wal_rank"] = pwr["wal"].rank(ascending=False)
 pwr["awal_rank"] = pwr["awal"].rank(ascending=False)
@@ -66,8 +65,7 @@ pwr["pointsScored_rank"] = pwr["pointsScored"].rank(ascending=False)
 pwr["scoringStandardDeviation_rank"] = pwr["scoringStandardDeviation"].rank()
 pwr["overallWins_rank"] = pwr["overallWins"].rank(ascending=False)
 pwr["Power Rank"] = pwr.apply(lambda row: ((3*row.wal_rank) + row.awal_rank + row.smartWins_rank + row.pointsScored_rank + row.scoringStandardDeviation_rank + row.overallWins_rank)/8, axis=1)
-pwr_styled =  pwr.apply(pd.to_numeric).style.set_table_attributes('class="table"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).background_gradient(cmap='RdYlGn').to_html()
-print(pwr)
+pwr_styled =  pwr.apply(pd.to_numeric).style.set_table_attributes('class="table"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).hide_columns(["wal_rank", "awal_rank", "smartWins_rank", "pointsScored_rank", "scoringStandardDeviation_rank", "overallWins_rank"]).background_gradient(cmap='RdYlGn').to_html()
 
 
 @app.route('/')
