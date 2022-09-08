@@ -3,6 +3,7 @@
 {% block content %}
     <h1>{% block title %} Sunday School Stats {% endblock %}</h1>
     <h3>Team Breakdowns</h3>
+    <br>
     {% for k,v in league.get_roster_season_projections_breakdown().items() %}
     <h5>{{ k }}</h5>
     <table class="table">
@@ -19,5 +20,7 @@
         {% endfor %}
         </tbody>
     </table>
+    <br>
+    <br>
     {% endfor %}
 {% endblock %}

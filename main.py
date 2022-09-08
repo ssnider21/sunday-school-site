@@ -12,7 +12,9 @@ from sleeper.model import League, Roster, User, Matchup, PlayoffMatchup, Transac
 import pandas as pd
 from decimal import *
 
-from pprint import pprint as pp
+import base64
+from io import BytesIO
+from matplotlib.figure import Figure
 
 app = Flask(__name__)
 
@@ -22,7 +24,6 @@ sleeperLeagueLoader = SleeperLeagueLoader("854402777273720832", [2021])
 league = sleeperLeagueLoader.loadLeague()
 
 x = league.years[0]
-# pp(x)
 
 team_map = {}
 for team in x.teams:
@@ -44,7 +45,7 @@ for stat, d in yearstats.items():
     ys_with_nn[stat] = nicknames(d)
 
 df = pd.DataFrame(ys_with_nn, columns=yearstats.keys())
-html = df.style.format(lambda x: f'{x:,.3f}' if isinstance(x, float) else f'{x}').set_table_attributes('class="table"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).background_gradient(cmap='RdYlGn').to_html()
+html = df.style.format(lambda x: f'{x:,.3f}' if isinstance(x, float) else f'{x}').set_table_attributes('class="w-auto table allstats"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).background_gradient(cmap='RdYlGn').to_html()
 
 tables = []
 for stat, d in ys_with_nn.items():

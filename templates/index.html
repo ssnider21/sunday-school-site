@@ -15,7 +15,11 @@
     <div class="table-responsive">
         {{ full_table|safe }}
     </div>
+    <br>
+    <div class="table-responsive">
     {% for table in tables %}
             {{ table|safe }}
+            <br>
     {% endfor %}
+    </div>
 {% endblock %}

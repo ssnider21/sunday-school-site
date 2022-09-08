@@ -38,7 +38,6 @@ class Team:
             for week in range(1, 15):
                 week_stats = stats.get_week_stats("regular", 2022, week)
                 week_breakdown[self.get_player_name(player)].append(stats.get_player_week_score(week_stats, player).get("pts_ppr"))
-        print(week_breakdown)
         return week_breakdown
 
 
@@ -46,6 +45,7 @@ class SundaySchool:
     def __init__(self):
         self.rosters = league.get_rosters()
         self.users = league.get_users()
+        self.user_dict = self._get_user_dict(self.users)
         self.nicknames = self._get_team_nicknames()
 
     def get_player_name(self, player_id):
@@ -56,35 +56,49 @@ class SundaySchool:
 
     def _get_team_nicknames(self):
         nickname_dict = {}
-        for user in self.users:
-            nickname_dict[user.get("user_id")] = user.get("metadata").get("team_name")
-            if user.get("user_id") == "725046935236472832":
-                nickname_dict[user.get("user_id")] = "ssnider21"
-            elif user.get("user_id") == "726241984393613312":
-                nickname_dict[user.get("user_id")] = "mitchgoldhaber"
+        for user in self.user_dict.keys():
+            nn = self.user_dict.get(user).get("metadata").get("team_name")
+            if nn is not None:
+                nickname_dict[user] = nn
+            else:
+                nickname_dict[user] = self.user_dict.get(user).get("display_name")
         return nickname_dict
+
+    def _get_user_dict(self, users):
+        nd = {}
+        for item in users:
+            nd[item.get("user_id")] = item
+        return nd
 
     def get_roster_season_projections(self):
         combined_total = {}
         projections = stats.get_all_projections(season_type="regular", season=2022)
         for roster in self.rosters:
-            # print(roster)
             owner_id = roster.get("owner_id")
             team_name = self.nicknames.get(owner_id)
-            combined_total[team_name] = 0
+            combined_total[team_name] = {"no_injuries": 0, "injuries": 0}
             all_players = roster.get("starters")
             for player in all_players:
-                proj = projections.get(player).get("pts_ppr")
-                pos = self.get_player_position(player)
+                try:
+                    proj = projections.get(player).get("pts_ppr")
+                    combined_total[team_name]["no_injuries"] += proj
+                    pos = self.get_player_position(player)
+                except Exception as e:
+                    proj = 0
+                    combined_total[team_name]["no_injuries"] += proj
+                    pos = None
                 for i in range(18):
                     if injuries.get(pos) is not None and random.random() < injuries.get(pos)[0]:
                         i += injuries.get(pos)[1]
                         proj -= ((proj/17)*injuries.get(pos)[1])
-                combined_total[team_name] += proj
+                combined_total[team_name]["injuries"] += proj
+        df = pd.DataFrame.from_dict(combined_total, orient='index')
+        df["no_inj_rank"] = df["no_injuries"].rank(ascending=False)
+        df["inj_rank"] = df["injuries"].rank(ascending=False)
+        df.columns = ["Season Starters Total", "With Simulated Injuries", "Total Rank", "Injuries Rank"]
+        df = df[["Season Starters Total", "Total Rank", "With Simulated Injuries", "Injuries Rank"]]
 
-        df = pd.DataFrame.from_dict(combined_total, orient='index', columns=["Season Starters Total"])
-        df["Rank"] = df["Season Starters Total"].rank(ascending=False)
-        df_styled =  df.style.format(lambda x: f'{x:,.1f}' if isinstance(x, float) else f'{x}').set_table_attributes('class="table"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).background_gradient(cmap='RdYlGn', subset=["Season Starters Total"]).to_html()
+        df_styled =  df.style.format(lambda x: f'{x:,.1f}' if isinstance(x, float) else f'{x}').set_table_attributes('class="table"').set_table_styles([dict(selector='th', props=[('text-align', 'center')])]).background_gradient(cmap='RdYlGn').to_html()
 
         return df_styled
 
