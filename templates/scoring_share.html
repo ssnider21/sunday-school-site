@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} Sunday School Stats {% endblock %}</h1>
+    <h3>Scoring Share by Position</h3>
+    <div id="chart" class="chart"></div>
+{% endblock %}
+{% block js %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script type="text/javascript">
+    graphs = {{ graphJSON|safe }};
+    Plotly.plot('chart',graphs,{});        
+</script>
+{% endblock %}

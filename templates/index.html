@@ -12,6 +12,8 @@
         {{ power|safe }}
     </div>
     <br>
+    <div id="chart" class="chart"></div>
+    <br>
     <div class="table-responsive">
         {{ full_table|safe }}
     </div>
@@ -22,4 +24,11 @@
             <br>
     {% endfor %}
     </div>
+{% endblock %}
+{% block js %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script type="text/javascript">
+    graphs = {{ pr_chart|safe }};
+    Plotly.plot('chart',graphs,{});        
+</script>
 {% endblock %}

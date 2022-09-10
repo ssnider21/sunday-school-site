@@ -1,3 +1,4 @@
+from pprint import pp
 from typing import Optional
 
 from leeger.calculator.parent.YearCalculator import YearCalculator
@@ -6,6 +7,11 @@ from leeger.model.league.Year import Year
 from leeger.util.Deci import Deci
 from leeger.util.navigator.YearNavigator import YearNavigator
 
+import requests
+import json
+
+with open("sunday_school/players.json") as f:
+    PLAYERS = json.load(f)
 
 class PointsScoredYearCalculator(YearCalculator):
     """
@@ -40,6 +46,49 @@ class PointsScoredYearCalculator(YearCalculator):
                     teamIdAndPointsScored[matchup.teamAId] += Deci(matchup.teamAScore)
                     teamIdAndPointsScored[matchup.teamBId] += Deci(matchup.teamBScore)
 
+        cls._setToNoneIfNoGamesPlayed(teamIdAndPointsScored, year, filters, **kwargs)
+        return teamIdAndPointsScored
+
+    @classmethod
+    @validateYear
+    def getPointsScoredByPosition(cls, year: Year, **kwargs) -> dict[str, dict[str, Optional[Deci]]]:
+        filters = cls._getYearFilters(year, **kwargs)
+
+        teamIdAndPointsScored = dict()
+        for teamId in YearNavigator.getAllTeamIds(year):
+            teamIdAndPointsScored[teamId] = dict()
+
+        for i in range(filters.weekNumberStart - 1, filters.weekNumberEnd):
+            week = year.weeks[i]
+            week_stats_res = requests.get(f"https://api.sleeper.com/stats/nfl/{year.yearNumber}/{week.weekNumber}?season_type=regular&position[]=DEF&position[]=K&position[]=QB&position[]=RB&position[]=TE&position[]=WR&order_by=pts_ppr").json()
+            week_stats = {}
+            for player in week_stats_res:
+                week_stats[player.get("player_id")] = player
+            for matchup in week.matchups:
+                if matchup.matchupType in filters.includeMatchupTypes:
+                    for playerA, playerB in zip(matchup.teamAStarters, matchup.teamBStarters):
+                        playerAPos = PLAYERS.get(playerA).get("position")
+                        playerBPos = PLAYERS.get(playerB).get("position")
+                        # playerAPts = requests.get(f"https://api.sleeper.com/stats/nfl/player/{playerA}?season_type=regular&season={year.yearNumber}&week={week.weekNumber}").json().get("stats").get("pts_ppr") or 0
+                        # playerBPts = requests.get(f"https://api.sleeper.com/stats/nfl/player/{playerB}?season_type=regular&season={year.yearNumber}&week={week.weekNumber}").json().get("stats").get("pts_ppr") or 0
+                        try:
+                            playerAPts = week_stats.get(playerA).get("stats").get("pts_ppr") or 0
+                        except Exception:
+                            playerAPts = 0
+                        try:
+                            playerBPts = week_stats.get(playerB).get("stats").get("pts_ppr") or 0
+                        except Exception:
+                            playerBPts = 0
+                        # playerAPts = week_stats.get(playerA).get("stats").get("pts_ppr") or 0
+                        # playerBPts = week_stats.get(playerB).get("stats").get("pts_ppr") or 0
+                        if playerAPos not in teamIdAndPointsScored[matchup.teamAId]:
+                            teamIdAndPointsScored[matchup.teamAId][playerAPos] = Deci(playerAPts)
+                        else:
+                            teamIdAndPointsScored[matchup.teamAId][playerAPos] += Deci(playerAPts)
+                        if playerBPos not in teamIdAndPointsScored[matchup.teamBId]:
+                            teamIdAndPointsScored[matchup.teamBId][playerBPos] = Deci(playerBPts)
+                        else:
+                            teamIdAndPointsScored[matchup.teamBId][playerBPos] += Deci(playerBPts)
         cls._setToNoneIfNoGamesPlayed(teamIdAndPointsScored, year, filters, **kwargs)
         return teamIdAndPointsScored
 

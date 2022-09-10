@@ -1,4 +1,5 @@
 import itertools
+from pprint import pp
 
 from sleeper.api import LeagueAPIClient
 from sleeper.model import League as SleeperLeague
@@ -91,13 +92,17 @@ class SleeperLeagueLoader(LeagueLoader):
                     teamBSleeperMatchup = sleeperMatchupPair[1]
                     teamB = self.__sleeperRosterIdToTeamMap[teamBSleeperMatchup.roster_id]
 
+                    # pp(sleeperMatchupPair)
+
                     matchups.append(Matchup(teamAId=teamA.id,
                                             teamBId=teamB.id,
                                             teamAScore=teamASleeperMatchup.points,
                                             teamBScore=teamBSleeperMatchup.points,
                                             teamAHasTiebreaker=False,  # TODO: Find way to get tiebreaker
                                             teamBHasTiebreaker=False,  # TODO: Find way to get tiebreaker
-                                            matchupType=MatchupType.REGULAR_SEASON))
+                                            matchupType=MatchupType.REGULAR_SEASON,
+                                            teamAStarters=teamASleeperMatchup.starters,
+                                            teamBStarters=teamBSleeperMatchup.starters))
                 weeks.append(Week(weekNumber=i + 1, matchups=matchups))
         # get playoff weeks
         sleeperPlayoffMatchups = LeagueAPIClient.get_winners_bracket(league_id=sleeperLeague.league_id)

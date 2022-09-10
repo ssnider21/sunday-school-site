@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from leeger.enum.MatchupType import MatchupType
 from leeger.exception.InvalidMatchupFormatException import InvalidMatchupFormatException
@@ -19,6 +19,8 @@ class Matchup(UniqueId, JSONSerializable):
     matchupType: MatchupType = MatchupType.REGULAR_SEASON
     teamAHasTiebreaker: bool = False
     teamBHasTiebreaker: bool = False
+    teamAStarters: list = field(default_factory=list)
+    teamBStarters: list = field(default_factory=list)
 
     def __post_init__(self):
         # Team A and Team B cannot both have the tiebreaker
@@ -55,5 +57,7 @@ class Matchup(UniqueId, JSONSerializable):
             "teamBScore": self.teamBScore,
             "matchupType": self.matchupType.name,
             "teamAHasTieBreaker": self.teamAHasTiebreaker,
-            "teamBHasTieBreaker": self.teamBHasTiebreaker
+            "teamBHasTieBreaker": self.teamBHasTiebreaker,
+            "teamAStarters": self.teamAStarters,
+            "teamBStarters": self.teamBStarters
         }
