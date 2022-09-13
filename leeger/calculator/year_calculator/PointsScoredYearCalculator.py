@@ -67,8 +67,16 @@ class PointsScoredYearCalculator(YearCalculator):
             for matchup in week.matchups:
                 if matchup.matchupType in filters.includeMatchupTypes:
                     for playerA, playerB in zip(matchup.teamAStarters, matchup.teamBStarters):
-                        playerAPos = PLAYERS.get(playerA).get("position")
-                        playerBPos = PLAYERS.get(playerB).get("position")
+                        try:
+                            playerAPos = PLAYERS.get(playerA).get("position")
+                        except:
+                            print(playerA)
+                            print(matchup)
+                        try:
+                            playerBPos = PLAYERS.get(playerB).get("position")
+                        except:
+                            print(playerB)
+                            print(matchup)
                         # playerAPts = requests.get(f"https://api.sleeper.com/stats/nfl/player/{playerA}?season_type=regular&season={year.yearNumber}&week={week.weekNumber}").json().get("stats").get("pts_ppr") or 0
                         # playerBPts = requests.get(f"https://api.sleeper.com/stats/nfl/player/{playerB}?season_type=regular&season={year.yearNumber}&week={week.weekNumber}").json().get("stats").get("pts_ppr") or 0
                         try:
