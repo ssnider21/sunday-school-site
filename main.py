@@ -84,8 +84,7 @@ def nested_nicknames(d, year):
 
 
 def get_year_stats_with_nicknames(year):
-    yearstats = yearStatSheet(year, onlyRegularSeason=True).__dict__
-    # pp(yearstats2)
+    yearstats = yearStatSheet(year, onlyRegularSeason=True, weekNumberEnd=len(year.weeks) - 1).__dict__
     ys_with_nn = {}
     for stat, d in yearstats.items():
         ys_with_nn[stat] = nicknames(d, year)
@@ -94,7 +93,7 @@ def get_year_stats_with_nicknames(year):
 
 def get_weekly_pr_df(year):
     new_ys_with_nn = {}
-    for i in range(1, len(year.weeks) + 1):
+    for i in range(1, len(year.weeks)):
         temp_yearstats = yearStatSheet(
             year, onlyRegularSeason=True, weekNumberEnd=i
         ).__dict__
@@ -103,13 +102,13 @@ def get_weekly_pr_df(year):
             new_ys_with_nn[i][stat] = nicknames(d, year)
     # pp(new_ys_with_nn)
     w_pr = {}
-    for i in range(1, len(year.weeks) + 1):
+    for i in range(1, len(year.weeks)):
         w_pr[i] = {}
         for team in year.teams:
             w_pr[i][team.name] = {}
     final = pd.DataFrame()
     # final.set_index([team.name for team in x.teams])
-    for i in range(1, len(year.weeks) + 1):
+    for i in range(1, len(year.weeks)):
         for stat, d in new_ys_with_nn.get(i).items():
             if stat in set(
                 [
